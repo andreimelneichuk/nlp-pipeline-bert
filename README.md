@@ -98,6 +98,8 @@ pip install -r requirements.txt # или pip install torch transformers scikit-l
 ## 🗺️ Дорожная карта (Roadmap)
 
 Подробный план развития проекта описан в [plan.md](plan.md):
-- [x] **Этап 1**: Fine-tuning BERT-модели для классификации текстов, подбор гиперпараметров, INT8-квантизация.
-- [ ] **Этап 2**: Генеративная часть (LoRA fine-tuning русскоязычной GPT / Llama) либо построение RAG-конвейера (векторная база FAISS + ретривер).
-- [ ] **Этап 3**: Обертка сервиса в FastAPI/Docker для развертывания в production.
+- [x] **Выбор архитектуры**: Анализ данных, выбор моделей `ruBert-base` / `rubert-tiny2`.
+- [x] **Балансировка и токенизация**: Кастомный `Dataset`, стратификация, `WeightedRandomSampler`.
+- [x] **Fine-tuning BERT**: Обучение с `AdamW` и линейным шедулером, F1 > 0.95.
+- [x] **Оптимизация инференса**: Динамическая квантизация INT8 (`torch.quantization.quantize_dynamic`).
+- [ ] **Экспорт и деплой**: Конвертация в ONNX Runtime и упаковка инференс-сервиса в Docker.
