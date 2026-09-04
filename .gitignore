@@ -1,0 +1,27 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+**/.DS_Store
+
+# Локальная документация (не публикуется)
+docs-wiki-main/
+**/docs-wiki-main/**
+
+# Датасеты и разметка
+*.csv
+*.json
+*.numbers
+output/
+**/output/**
+
+# Веса моделей и чекпоинты (>100MB)
+*.pth
+*.pt
+*.bin
+*.onnx
+
+# Логи и отчёты
+*.log
+logs for train/
+**/logs for train/**
