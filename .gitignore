@@ -25,3 +25,8 @@ output/
 *.log
 logs for train/
 **/logs for train/**
+
+# Окружение и ноутбуки
+.env
+.ipynb_checkpoints/
+*.xlsx

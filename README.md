@@ -1,105 +1,120 @@
-# NLP Pipeline & BERT Text Classification 🚀
+# NLP Pipeline & BERT Text Classification
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
 [![Transformers](https://img.shields.io/badge/Hugging%20Face-Transformers-yellow.svg)](https://huggingface.co/)
-[![Code style](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-Комплексный конвейер для классификации текстов и обработки естественного языка (NLP): от классических алгоритмов машинного обучения (Gradient Boosting) до тонкой настройки трансформеров (**ruBERT**) и ускорения инференса с помощью **INT8 динамической квантизации**.
-
----
-
-## 📌 Ключевые возможности
-
-- **Тонкая настройка Transformer-моделей**: Обучение и адаптация `ai-forever/ruBert-base` и компактных моделей `rubert-tiny2` под задачи многоклассовой классификации документов и запросов.
-- **Борьба с дисбалансом классов**: Использование стратифицированного разбиения (`stratify`) и `WeightedRandomSampler` для выравнивания редких категорий в батчах.
-- **Оптимизация и ускорение инференса**:
-  - Применение динамической квантизации PyTorch (`torch.quantization.quantize_dynamic`) для конвертации весов `torch.nn.Linear` в **INT8**.
-  - Сокращение размера модели до **~4x** и ускорение инференса на CPU в **2–3x** практически без потери качества (F1-score ~ 0.95).
-- **Сравнение подходов**:
-  - Классический ML: реализация алгоритма Градиентного Бустинга над деревьями решений (`hw_03_gradient_boosting.py`).
-  - Исследование методов NLP: TF-IDF, N-граммы, эмбеддинги и бейзлайны классификации (`hw_text_classification.ipynb`).
-- **Скрипты предобработки**: очистка текста, токенизация, аугментация и подготовка чанков.
+Набор скриптов и ноутбуков по классификации текстов: от сбора и разметки датасета документации до тонкой настройки **ruBERT** и динамической **INT8-квантизации**. Отдельно лежат учебные эксперименты с RNN/GRU и градиентным бустингом (CatBoost).
 
 ---
 
-## 📂 Структура проекта
+## Что внутри
+
+- **Сбор датасета**: краулер документации на Playwright + BeautifulSoup, сохраняет страницы в CSV (`bert_classification/dataset.py`).
+- **Разметка через LLM**: классификация фрагментов текста по 5 категориям через OpenRouter API (`bert_classification/classification.py`).
+- **Предобработка**: удаление повторяющегося баннера, разбиение на предложения, дедупликация (`bert_classification/optimise_data.py`).
+- **Fine-tuning BERT** (`ai-forever/ruBert-base`): стратифицированное разбиение train/val/test, `WeightedRandomSampler` для редких классов, `AdamW` + `get_linear_schedule_with_warmup`, ранняя остановка по weighted F1.
+- **Динамическая квантизация INT8** (`torch.quantization.quantize_dynamic` для `torch.nn.Linear`) и сравнение FP32 vs INT8: размер модели, время инференса на тестовой выборке, Accuracy и F1.
+- **Учебные эксперименты**:
+  - RNN/GRU-классификация новостей AG News (`rnn_gru_text_classification.ipynb`);
+  - регрессия популярности треков: бейзлайн RandomForest и CatBoost с подбором глубины через кросс-валидацию (`catboost_popularity_regression.py`).
+
+---
+
+## Структура проекта
 
 ```text
 nlp-pipeline-bert/
-├── 1 gen: slaccifiction BERT/         # Модули обучения и оптимизации BERT
-│   ├── classification.py              # Пайплайн классификации и валидации
-│   ├── data_trai_and_qwat.py          # Полный цикл: Dataset, обучение, квантизация INT8 и бенчмарки
-│   ├── dataset.py                     # PyTorch Dataset и DataLoader с токенизацией
-│   ├── optimise_data.py               # Предобработка, очистка и дедупликация текстов
-│   └── questions_support.py           # Утилиты обработки категорий и запросов
-├── hw_03_gradient_boosting.py         # Практическая реализация Gradient Boosting
-├── hw_text_classification.ipynb       # Ноутбук с экспериментами по классификации текстов
-├── notebook4c99697c64.ipynb           # Исследовательский ноутбук с экспериментами
-├── plan.md                            # Дорожная карта и цели развития проекта (BERT, RAG, LoRA)
-├── .gitignore                         # Исключения (веса, данные, логи)
-└── README.md                          # Документация проекта
+├── bert_classification/
+│   ├── dataset.py                     # Краулер документации (Playwright) -> output/documentation_dataset.csv
+│   ├── classification.py              # Разметка фрагментов по категориям через LLM (OpenRouter)
+│   ├── optimise_data.py               # Очистка от баннера, разбиение на предложения, дедупликация
+│   ├── questions_support.py           # Извлечение пар «вопрос — категория» из Excel-таблицы
+│   └── train_and_quantize.py          # Dataset, обучение ruBERT, оценка, квантизация INT8, сравнение
+├── bert_finetuning_quantization.ipynb # Тот же пайплайн обучения и квантизации в виде ноутбука
+├── rnn_gru_text_classification.ipynb  # RNN/GRU на AG News (учебное задание)
+├── catboost_popularity_regression.py  # RandomForest и CatBoost для регрессии (учебное задание)
+├── plan.md                            # План работ по fine-tuning BERT
+├── requirements.txt
+└── .gitignore                         # Исключения (данные, веса, логи)
 ```
 
 ---
 
-## ⚙️ Установка и запуск
+## Установка
 
-### 1. Клонирование репозитория и создание окружения
 ```bash
 git clone https://github.com/andreimelneichuk/nlp-pipeline-bert.git
 cd nlp-pipeline-bert
 
 python -m venv .venv
-source .venv/bin/activate  # Для Windows: .venv\Scripts\activate
-pip install -r requirements.txt # или pip install torch transformers scikit-learn pandas numpy tqdm
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
 ```
 
-### 2. Основные зависимости
-* `python >= 3.10`
-* `torch >= 2.0.0`
-* `transformers >= 4.30.0`
-* `scikit-learn`
-* `pandas`, `numpy`, `tqdm`
+`requirements.txt` покрывает обучение BERT. Для остальных скриптов нужны дополнительные пакеты:
+
+- краулер: `pip install playwright beautifulsoup4 && playwright install chromium`;
+- чтение Excel в `questions_support.py`: `openpyxl`;
+- учебные эксперименты: `catboost`, `datasets`, `nltk`, `matplotlib`.
 
 ---
 
-## 🚀 Обучение и квантизация (INT8)
+## Запуск
 
-Скрипт `1 gen: slaccifiction BERT/data_trai_and_qwat.py` автоматизирует весь цикл:
-1. Загрузка и очистка текстовых данных (`clean_text`).
-2. Формирование сбалансированных батчей через `WeightedRandomSampler`.
-3. Обучение модели `BertForSequenceClassification` с расписанием `get_linear_schedule_with_warmup`.
-4. Оценка метрик качества: Accuracy, Macro F1, Weighted F1.
-5. Динамическая квантизация:
+Датасеты и веса моделей в репозиторий не входят (см. `.gitignore`). Скрипты ожидают файлы в каталоге `output/` относительно текущей директории.
+
+1. Сбор страниц документации. Адрес стартовой страницы задаётся в `BASE_URL`:
+   ```bash
+   python bert_classification/dataset.py
+   ```
+2. Разметка фрагментов через LLM. Нужен ключ OpenRouter:
+   ```bash
+   export OPENROUTER_API_KEY=...
+   python bert_classification/classification.py
+   ```
+3. Очистка и разбиение на предложения:
+   ```bash
+   python bert_classification/optimise_data.py
+   ```
+4. Обучение, оценка и квантизация. Читает `output/documentation_dataset_labeled.csv` со столбцами `content` и `category_name`:
+   ```bash
+   python bert_classification/train_and_quantize.py
+   ```
+
+Скрипт обучения выполняет следующие шаги:
+1. Загружает данные и делает лёгкую очистку текста (`clean_text`).
+2. Формирует батчи через `WeightedRandomSampler`.
+3. Обучает `BertForSequenceClassification` с `get_linear_schedule_with_warmup` и сохраняет лучшую модель в `best_model.pth`.
+4. Считает Accuracy и weighted F1 на тестовой выборке.
+5. Применяет динамическую квантизацию:
    ```python
-   import torch
-
    quantized_model = torch.quantization.quantize_dynamic(
-       model, 
-       {torch.nn.Linear}, 
-       dtype=torch.qint8
+       model, {torch.nn.Linear}, dtype=torch.qint8
    )
    ```
-6. Сравнение производительности FP32 vs INT8 (размер файла весов, время задержки на 1000 примеров).
+6. Выводит размер модели, время инференса и метрики до и после квантизации и сохраняет `quantized_model.pth`.
+
+Если в сборке PyTorch нет движка квантизации (например, на macOS), скрипт сообщает об этом и продолжает работу с исходной моделью.
 
 ---
 
-## 📊 Результаты и бенчмарки
+## Результаты
 
-| Метрика | Исходная модель (FP32) | Квантованная модель (INT8) | Выигрыш / Изменение |
-| :--- | :---: | :---: | :---: |
-| **Размер модели** | ~710 MB | ~180 MB | **~4x сжатие** |
-| **Средний Latency (CPU)** | ~45 мс / запрос | ~18 мс / запрос | **~2.5x быстрее** |
-| **Weighted F1-Score** | 0.952 | 0.949 | **< 0.3% разницы** |
+В ноутбуке `rnn_gru_text_classification.ipynb` сохранены результаты на AG News (accuracy на 5000 примерах из тестовой части):
+
+| Модель | Accuracy |
+| :--- | :---: |
+| RNN (бейзлайн) | 0.9002 |
+| GRU | 0.9022 |
+| GRU, 2 слоя | 0.9086 |
+| GRU, 2 слоя, конкатенация среднего и последнего скрытого состояния | 0.9092 |
+| то же + hidden_dim=256, dropout=0.5, 10 эпох | 0.9012 |
+
+Метрики BERT и замеры FP32 vs INT8 скрипт `train_and_quantize.py` печатает при запуске. В репозитории они не сохранены.
 
 ---
 
-## 🗺️ Дорожная карта (Roadmap)
+## Дальнейшие шаги
 
-Подробный план развития проекта описан в [plan.md](plan.md):
-- [x] **Выбор архитектуры**: Анализ данных, выбор моделей `ruBert-base` / `rubert-tiny2`.
-- [x] **Балансировка и токенизация**: Кастомный `Dataset`, стратификация, `WeightedRandomSampler`.
-- [x] **Fine-tuning BERT**: Обучение с `AdamW` и линейным шедулером, F1 > 0.95.
-- [x] **Оптимизация инференса**: Динамическая квантизация INT8 (`torch.quantization.quantize_dynamic`).
-- [ ] **Экспорт и деплой**: Конвертация в ONNX Runtime и упаковка инференс-сервиса в Docker.
+План работ описан в [plan.md](plan.md). Экспорт в ONNX и упаковка инференса в Docker пока не реализованы.
