@@ -82,7 +82,13 @@ pip install -r requirements.txt
    python bert_classification/train_and_quantize.py
    ```
 
-Скрипт обучения выполняет следующие шаги:
+Учебный скрипт регрессии популярности треков (данные курса скачиваются отдельно):
+```bash
+pip install "scikit-learn>=1.2" catboost pandas matplotlib tqdm gdown
+python catboost_popularity_regression.py --data-dir data --out-dir output --download
+```
+
+Скрипт обучения BERT выполняет следующие шаги:
 1. Загружает данные и делает лёгкую очистку текста (`clean_text`).
 2. Формирует батчи через `WeightedRandomSampler`.
 3. Обучает `BertForSequenceClassification` с `get_linear_schedule_with_warmup` и сохраняет лучшую модель в `best_model.pth`.
@@ -110,6 +116,8 @@ pip install -r requirements.txt
 | GRU, 2 слоя | 0.9086 |
 | GRU, 2 слоя, конкатенация среднего и последнего скрытого состояния | 0.9092 |
 | то же + hidden_dim=256, dropout=0.5, 10 эпох | 0.9012 |
+
+Для CatBoost в исходном ноутбуке кросс-валидация выбрала `depth=10` с CV R² ≈ 0.484; бейзлайн RandomForest по условию задания даёт R² ≈ 0.15.
 
 Метрики BERT и замеры FP32 vs INT8 скрипт `train_and_quantize.py` печатает при запуске. В репозитории они не сохранены.
 
